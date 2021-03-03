@@ -33,7 +33,7 @@ public:
 
 	bool offscreen(int sw, int sh)
 	{
-		return (x < 0 || x > sw || y < 0 || y > sh);
+		return y > sh;
 	}
 
 private:

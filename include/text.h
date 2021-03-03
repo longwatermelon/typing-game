@@ -17,6 +17,11 @@ public:
 		f = TTF_OpenFont("OpenSans-Regular.ttf", 100);
 	}
 
+	~Text()
+	{
+		if (f) TTF_CloseFont(f);
+	}
+
 	
 	void move(int x, int y)
 	{
@@ -35,17 +40,26 @@ public:
 		SDL_Surface* surf = TTF_RenderText_Solid(f, s1.c_str(), { 255, 0, 0 });
 		SDL_Texture* tex = SDL_CreateTextureFromSurface(rend, surf);
 
-		SDL_Rect temp = { rect.x, rect.y, (int)strlen(s1.c_str()) * CHAR_WIDTH, CHAR_HEIGHT };
-		SDL_RenderCopy(rend, tex, 0, &temp);
-
-		surf = TTF_RenderText_Solid(f, s2.c_str(), { 255, 255, 255 });
-		tex = SDL_CreateTextureFromSurface(rend, surf);
-
-		temp = { rect.x + (int)strlen(s1.c_str()) * CHAR_WIDTH, rect.y, (int)strlen(s2.c_str()) * CHAR_WIDTH, CHAR_HEIGHT };
+		SDL_Rect temp = { rect.x, rect.y, static_cast<int>(strlen(s1.c_str())) * CHAR_WIDTH, CHAR_HEIGHT };
 		SDL_RenderCopy(rend, tex, 0, &temp);
 
 		SDL_FreeSurface(surf);
 		SDL_DestroyTexture(tex);
+
+		surf = TTF_RenderText_Solid(f, s2.c_str(), { 255, 255, 255 });
+		tex = SDL_CreateTextureFromSurface(rend, surf);
+
+		temp = { rect.x + static_cast<int>(strlen(s1.c_str())) * CHAR_WIDTH, rect.y, static_cast<int>(strlen(s2.c_str())) * CHAR_WIDTH, CHAR_HEIGHT };
+		SDL_RenderCopy(rend, tex, 0, &temp);
+
+		SDL_FreeSurface(surf);
+		SDL_DestroyTexture(tex);
+	}
+
+
+	bool offscreen(int sw, int sh)
+	{
+		return rect.x > sw;
 	}
 
 
