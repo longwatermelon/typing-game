@@ -155,7 +155,12 @@ int main(int argc, char* argv[])
 
 			t->move(1, 0);
 
-			if (t->offscreen(screenw, screenh)) vtext.erase(vtext.begin() + i);
+			if (t->offscreen(screenw, screenh))
+			{
+				if (selected == t) selected = nullptr;
+
+				vtext.erase(vtext.begin() + i);
+			}
 			else t->render(rend);
 		}
 
