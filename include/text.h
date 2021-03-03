@@ -14,7 +14,7 @@ public:
 		: contents(contents)
 	{
 		rect = { x, y, (int)(contents.size()) * CHAR_WIDTH, CHAR_HEIGHT };
-		f = TTF_OpenFont("OpenSans-Regular.ttf", 100);
+		f = TTF_OpenFont("OpenSans-SemiboldItalic.ttf", 100);
 	}
 
 	~Text()

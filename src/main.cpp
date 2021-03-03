@@ -5,6 +5,8 @@
 #include <thread>
 #include <mutex>
 #include <chrono>
+#include <fstream>
+#include <sstream>
 #include <SDL.h>
 #include <SDL_ttf.h>
 
@@ -53,6 +55,22 @@ void explode(SDL_Renderer* rend, const SDL_Rect& rect, std::vector<Particle>& pa
 }
 
 
+void wall_explode(SDL_Renderer* rend, const SDL_Rect& rect, std::vector<Particle>& particles)
+{
+	std::random_device rd;
+	std::mt19937 rng(rd());
+
+	for (int i = 0; i < 2; i++)
+	for (int y = rect.y; y < rect.y + rect.h; y++)
+	{
+		std::uniform_real_distribution<float> yuni(-2.0f, 2.0f);
+		std::uniform_real_distribution<float> xuni(-10.0f, -5.0f);
+
+		particles.emplace_back(Particle(rect.x, y, { xuni(rng), yuni(rng) }));
+	}
+}
+
+
 void text(SDL_Renderer* rend, TTF_Font* font, const std::string& text, int x, int y)
 {
 	SDL_Surface* surf = TTF_RenderText_Solid(font, text.c_str(), { 255, 255, 255 });
@@ -83,11 +101,22 @@ int main(int argc, char* argv[])
 
 
 	int completed = 0;
-	TTF_Font* font = TTF_OpenFont("OpenSans-Regular.ttf", 100);
+	int missed = 0;
+	TTF_Font* font = TTF_OpenFont("OpenSans-SemiboldItalic.ttf", 100);
+
+
+	std::vector<std::string> words;
+
+	std::fstream fs;
+	fs.open("words.txt");
+	std::stringstream contents;
+	std::string line;
+
+	while (std::getline(fs, line)) words.push_back(line);
+	fs.close();
 
 
 	std::mutex mtx;
-	std::vector<std::string> words = { "boys", "loss", "thin", "idea", "befall", "force", "sister", "construe", "yielding", "day", "abide", "daffy", "abaft", "measure", "selfish" };
 	std::thread thr_spawn(spawn_text, std::ref(vtext), screenw, screenh, std::ref(words), std::ref(mtx), std::ref(running));
 
 
@@ -105,6 +134,7 @@ int main(int argc, char* argv[])
 			case SDL_TEXTINPUT: {
 				if (!selected)
 				{
+					std::lock_guard lock(mtx);
 					for (int i = vtext.size() - 1; i > -1; i--)
 					{
 						auto& t = vtext[i];
@@ -118,6 +148,7 @@ int main(int argc, char* argv[])
 
 				if (selected)
 				{
+					std::lock_guard lock(mtx);
 					if (selected->str()[selected->idx()] == evt.text.text[0])
 					{
 						selected->increment();
@@ -159,7 +190,9 @@ int main(int argc, char* argv[])
 			{
 				if (selected == t) selected = nullptr;
 
+				wall_explode(rend, t->rct(), particles);
 				vtext.erase(vtext.begin() + i);
+				++missed;
 			}
 			else t->render(rend);
 		}
@@ -174,11 +207,12 @@ int main(int argc, char* argv[])
 			else p.render(rend);
 		}
 
-		text(rend, font, "Words completed: " + std::to_string(completed), 0, screenh - CHAR_WIDTH - 5);
+		text(rend, font, "Words completed: " + std::to_string(completed), 0, screenh - CHAR_WIDTH * 2 - 10);
+		text(rend, font, "Words missed: " + std::to_string(missed), 0, screenh - CHAR_WIDTH - 5);
 
 		SDL_RenderPresent(rend);
 
-		SDL_Delay(10);
+		SDL_Delay(2);
 	}
 
 	if (thr_spawn.joinable()) thr_spawn.join();
